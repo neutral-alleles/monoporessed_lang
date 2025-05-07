@@ -1,0 +1,110 @@
+(* Monopressed Language Specification - Updated for Expressions and Control Flow *)
+
+(* Primitive Types *)
+PrimitiveType = 'int8' | 'int16' | 'int32' | 'int64' | 'uint8' | 'uint16' | 'uint32' | 'uint64' | 'float32' | 'float64' | 'bool' | 'rune' | 'string' | 'unit';
+
+(* Identifiers *)
+Identifier = Letter, { Letter | Digit };
+Letter = 'a'...'z' | 'A'...'Z';
+Digit = '0'...'9';
+
+(* Values - Literals *)
+Literal = IntegerLiteral | FloatLiteral | BooleanLiteral | RuneLiteral | StringLiteral | UnitLiteral;
+IntegerLiteral = Digit, { Digit }; (* TODO: Add optional sign? *)
+FloatLiteral = Digit, { Digit }, '.', Digit, { Digit }; (* TODO: Add sign, exponents? *)
+BooleanLiteral = 'true' | 'false';
+RuneLiteral = "'", ? character ?, "'"; (* Placeholder *)
+StringLiteral = '"', { ? character ? }, '"'; (* Placeholder *)
+UnitLiteral = 'unit';
+
+(* Expressions *)
+Expression = Literal
+           | Identifier
+           | ArithmeticExpression
+           | ComparisonExpression
+           | BooleanExpression
+           | FunctionCall
+           | ReadIntExpression (* Added read_int32 equivalent *)
+           | '(', Expression, ')'; (* Parenthesized expression for grouping *)
+
+(* Arithmetic Operations *)
+ArithmeticOp = 'add' | 'sub' | 'mul' | 'div'   (* Integer ops *)
+             | 'fadd' | 'fsub' | 'fmul' | 'fdiv'; (* Float ops *)
+ArithmeticExpression = ArithmeticOp, Expression, Expression;
+
+(* Comparison Operations *)
+ComparisonOp = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
+ComparisonExpression = ComparisonOp, Expression, Expression;
+
+(* Boolean Operations *)
+BooleanOpUnary = 'not';
+BooleanOpBinary = 'and' | 'or' | 'xor';
+BooleanExpression = BooleanOpUnary, Expression
+                  | BooleanOpBinary, Expression, Expression;
+
+(* Variable Definition - Updated *)
+VariableDefinition = ( 'let' | 'init' ), PrimitiveType, Identifier, Expression;
+
+(* Variable Assignment *)
+VariableAssignment = 'set', Identifier, Expression;
+
+(* Function Definition *)
+FunctionDefinition = 'def', Identifier, '(', [ ParameterList ], ')', PrimitiveType, Newline, Indent, FunctionBody, Dedent;
+ParameterList = Parameter, { ',', Parameter };
+Parameter = PrimitiveType, Identifier;
+FunctionBody = { Statement };
+ReturnStatement = 'return', [ Expression ]; (* Expression is optional *)
+
+(* Function Call *)
+FunctionCall = Identifier, { Expression };
+
+(* Input Expression *)
+ReadIntExpression = 'read_int32', '(', ')'; (* Assuming read_int32 is a keyword/builtin *)
+
+(* Loop Statements - Updated ForLoop, added Break/Continue *)
+ForLoop = 'for', Identifier, 'in', 'range', Expression, Newline, Indent, LoopBody, Dedent; (* Simplified *)
+WhileLoop = 'while', Expression, Newline, Indent, LoopBody, Dedent;
+LoopBody = { Statement };
+BreakStatement = 'break';
+ContinueStatement = 'continue';
+
+(* Conditional Statement - Updated with Elif *)
+IfStatement = 'if', Expression, Newline, Indent, ThenBlock, Dedent,
+              { ElifClause },
+              [ ElsePart ];
+ElifClause  = 'elif', Expression, Newline, Indent, ThenBlock, Dedent;
+ThenBlock   = { Statement };
+ElsePart    = 'else', Newline, Indent, ElseBlock, Dedent;
+ElseBlock   = { Statement };
+
+(* Other Statements - Added inc, dec, selfset *)
+IncrementStatement = 'inc', Identifier, [ Expression ];
+DecrementStatement = 'dec', Identifier, [ Expression ];
+SelfSetStatement   = 'selfset', Identifier, Expression;
+
+(* Statement - Updated *)
+Statement = VariableDefinition
+          | VariableAssignment
+          | FunctionCall
+          | ReturnStatement
+          | ForLoop
+          | WhileLoop
+          | IfStatement
+          | IncrementStatement
+          | DecrementStatement
+          | SelfSetStatement
+          | BreakStatement
+          | ContinueStatement
+          | Comment
+          | Newline;
+(* Removed VariableDeclaration and DeleteStatement as they are not current features or replaced *)
+
+(* Whitespace and Comments *)
+Whitespace = { ' ' | '\t' };
+Newline = '\n';
+Indent = '\t'; (* Or multiple spaces, TBD *) 
+Dedent = ? outdent ?; (* TBD *)
+Comment = '#' , { ? any character except newline ? }, Newline;
+
+(* Program Structure *)
+Program = { Statement };
